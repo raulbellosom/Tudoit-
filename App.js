@@ -1,20 +1,21 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ToastProvider } from "react-native-toast-notifications";
+import Main from "./Main";
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ToastProvider>
+      <Main />
+    </ToastProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+{
+  /* <CheckBox
+          containerStyle={{ backgroundColor: "#494D5F" }}
+          textStyle={{ color: "white" }}
+          title="Tarea tres"
+          checked={check1}
+          onPress={() => setCheck1(!check1)}
+        />
+        <Divider /> */
+}
