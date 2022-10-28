@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Button, Icon, Input } from "@rneui/themed";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { validateEmail } from "../utils/validations";
 
 export const User = ({ user, close, updateData }) => {
@@ -135,7 +134,7 @@ export const User = ({ user, close, updateData }) => {
               display: "flex",
               flexDirection: "row",
               justifyContent: "center",
-              paddingTop: 10,
+              paddingTop: 30,
             }}
           >
             <Button
@@ -295,7 +294,7 @@ export const User = ({ user, close, updateData }) => {
       )}
 
       {changePass && (
-        <KeyboardAwareScrollView>
+        <ScrollView>
           <Text style={styles.textLogin}>Cambiar contraseña</Text>
           <Input
             onChangeText={(text) => setNewPass(text)}
@@ -388,7 +387,7 @@ export const User = ({ user, close, updateData }) => {
               }}
             />
           </View>
-        </KeyboardAwareScrollView>
+        </ScrollView>
       )}
 
       <View style={styles.iconClose}>
@@ -411,6 +410,9 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 10,
+    width: "90%",
+    maxWidth: 350,
+    maxHeight: 475,
   },
   regularText: {
     fontSize: 20,

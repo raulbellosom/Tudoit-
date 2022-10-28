@@ -1,6 +1,7 @@
+import { LogBox } from "react-native";
 import { ToastProvider } from "react-native-toast-notifications";
 import Main from "./Main";
-
+LogBox.ignoreLogs(["Async Storage has been extracted from react-native core"]);
 export default function App() {
   return (
     <ToastProvider>

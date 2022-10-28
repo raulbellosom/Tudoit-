@@ -3,13 +3,20 @@ import { View, Text, StyleSheet } from "react-native";
 import { Button, Icon } from "@rneui/themed";
 
 export const LogOut = ({ user, logOut, close }) => {
-  const { name, email } = user;
+  const { displayName, email } = user;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        ¿Realmente deseas cerrar sesión de {name ?? "User"}?
+        ¿Realmente deseas cerrar sesión {displayName ?? "User"}?{" "}
       </Text>
+      <Icon
+        style={{ padding: 20 }}
+        type="font-awesome-5"
+        name="door-open"
+        size={60}
+        color="white"
+      />
       <View
         style={{
           display: "flex",
@@ -61,6 +68,9 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 10,
+    width: "90%",
+    maxWidth: 300,
+    maxHeight: 300,
   },
   regularText: {
     fontSize: 15,
@@ -76,7 +86,7 @@ const styles = StyleSheet.create({
   title: {
     textAlign: "center",
     fontWeight: "bold",
-    color: "#494D5F",
+    color: "#e4f5ff",
     padding: 10,
     fontSize: 18,
   },

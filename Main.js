@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import Constants from "expo-constants";
-import { Icon, Divider, CheckBox } from "@rneui/themed";
+import { Icon, Divider } from "@rneui/themed";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -19,15 +26,28 @@ import { Auth } from "./Auth";
 import { User } from "./components/User";
 import { LogOut } from "./components/LogOut";
 import { useToast } from "react-native-toast-notifications";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+import { ListTask } from "./components/ListTask";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 export default function Main() {
   const [isAddTaks, setIsAddTaks] = useState(false);
-  const [isAuth, setIsAuth] = useState(false);
+  const [isNewTask, setIsNewTask] = useState(false);
+  const [isAuth, setIsAuth] = useState(null);
+  const [allTask, setAllTask] = useState(null);
   const [closeSesion, setCloseSesion] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [userData, setUserData] = useState("");
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const toast = useToast();
 
   useEffect(() => {
@@ -35,12 +55,52 @@ export default function Main() {
       if (user) {
         setUserData(user);
         setIsAuth(true);
+        handleGetTask(user);
+      } else {
+        setIsAuth(false);
       }
     });
   }, [userData]);
 
+  useEffect(() => {
+    if (allTask !== null) {
+      handleGetTask(userData);
+    }
+  }, [isNewTask === true]);
+
+  const handleGetTask = async (user) => {
+    const taskRef = collection(db, "tasks");
+    const tasks = [];
+    const q = query(
+      taskRef,
+      where("idUser", "==", user.uid),
+      where("isCompleted", "==", false),
+      orderBy("createdAt")
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      tasks.push({
+        id: doc.id,
+        name: doc.data().name,
+        description: doc.data().description,
+        isCompleted: doc.data().isCompleted,
+        createdAt: doc.data().createdAt,
+      });
+    });
+    if (allTask === null) {
+      setAllTask(tasks);
+    } else {
+      tasks.forEach((object) => {
+        if (allTask.find((item) => item.name === object.name)) {
+          console.log("tarea ya existente");
+        } else {
+          setAllTask(tasks);
+        }
+      });
+    }
+  };
+
   const handleCreateAccount = (email, password) => {
-    console.log(email, password);
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         setUserData(userCredential.user);
@@ -94,14 +154,17 @@ export default function Main() {
   const handleLogOut = () => {
     signOut(auth)
       .then(() => {
-        setIsAuth(false);
-        setCloseSesion(false);
         setIsAddTaks(false);
+        setIsNewTask(false);
+        setIsAuth(false);
+        setAllTask(null);
+        setCloseSesion(false);
         setShowProfile(false);
+        setUserData("");
         toast.show("Se ha cerrado sesión correctamente.", {
           type: "success",
           successColor: "#5d58d7",
-          placement: "top",
+          placement: "center",
           duration: 4000,
           animationType: "slide-in | zoom-in",
         });
@@ -172,7 +235,6 @@ export default function Main() {
           });
         break;
       case "pass":
-        console.log(data);
         const user = auth.currentUser;
         updatePassword(user, data)
           .then(() => {
@@ -236,80 +298,101 @@ export default function Main() {
           <Text style={styles.regularText}>Planea ahora, haz lo despues! </Text>
         </View>
         <Divider style={{ paddingBottom: 20 }} />
-        {!isAuth && (
-          <View>
-            <Auth register={handleCreateAccount} login={handleSingIn} />
-          </View>
-        )}
 
-        {isAuth && (
-          <View style={styles.btnProfile}>
-            <Icon
-              reverse
-              name="user-circle"
-              type="font-awesome-5"
-              size={20}
-              color={"#F99E4C"}
-              onPress={() => {
-                openViews("profile");
-              }}
-            />
+        {isAuth === null ? (
+          <View style={[styles.spinnerContinare, styles.spinnerHorizontal]}>
+            <ActivityIndicator size="large" color="#F99E4C" />
           </View>
-        )}
+        ) : (
+          <>
+            {allTask !== null && (
+              <ScrollView>
+                <ListTask tasks={allTask} setTasks={setAllTask} />
+              </ScrollView>
+            )}
 
-        {isAuth && (
-          <View style={styles.btnClose}>
-            <Icon
-              reverse
-              name="logout"
-              type="ant-design"
-              size={20}
-              color={"#F99E4C"}
-              onPress={() => {
-                openViews("close");
-              }}
-            />
-          </View>
-        )}
-        {isAuth && (
-          <View style={styles.btnAdd}>
-            <Icon
-              onPress={() => {
-                openViews("task");
-              }}
-              raised
-              name="plus"
-              type="font-awesome"
-              color="#F99E4C"
-            />
-          </View>
-        )}
+            {!isAuth && (
+              <View>
+                <Auth register={handleCreateAccount} login={handleSingIn} />
+              </View>
+            )}
 
-        {showProfile && (
-          <View style={styles.profile}>
-            <User
-              user={userData}
-              logOut={handleLogOut}
-              close={setShowProfile}
-              updateData={handleUpdateData}
-            />
-          </View>
-        )}
+            {isAuth && (
+              <View style={styles.btnProfile}>
+                <Icon
+                  reverse
+                  name="user-circle"
+                  type="font-awesome-5"
+                  size={20}
+                  color={"#F99E4C"}
+                  onPress={() => {
+                    openViews("profile");
+                  }}
+                />
+              </View>
+            )}
 
-        {closeSesion && (
-          <View style={styles.profile}>
-            <LogOut
-              user={userData}
-              logOut={handleLogOut}
-              close={setCloseSesion}
-            />
-          </View>
-        )}
+            {isAuth && (
+              <View style={styles.btnClose}>
+                <Icon
+                  reverse
+                  name="logout"
+                  type="ant-design"
+                  size={20}
+                  color={"#F99E4C"}
+                  onPress={() => {
+                    openViews("close");
+                  }}
+                />
+              </View>
+            )}
+            {isAuth && (
+              <View style={styles.btnAdd}>
+                <Icon
+                  onPress={() => {
+                    openViews("task");
+                  }}
+                  raised
+                  name="plus"
+                  type="font-awesome"
+                  color="#F99E4C"
+                />
+              </View>
+            )}
 
-        {isAddTaks && (
-          <View style={styles.taskContainer}>
-            <CreateTask isAddTaks={isAddTaks} setIsAddTaks={setIsAddTaks} />
-          </View>
+            {showProfile && (
+              <View style={styles.profileContainer}>
+                <User
+                  user={userData}
+                  logOut={handleLogOut}
+                  close={setShowProfile}
+                  updateData={handleUpdateData}
+                />
+              </View>
+            )}
+
+            {closeSesion && (
+              <View style={styles.profileContainer}>
+                <LogOut
+                  user={userData}
+                  logOut={handleLogOut}
+                  close={setCloseSesion}
+                />
+              </View>
+            )}
+
+            {isAddTaks && (
+              <View style={styles.profileContainer}>
+                <CreateTask
+                  user={userData}
+                  isAddTaks={isAddTaks}
+                  setIsAddTaks={setIsAddTaks}
+                  isNewTask={isNewTask}
+                  setIsNewTask={setIsNewTask}
+                />
+              </View>
+            )}
+          </>
         )}
       </View>
     </View>
@@ -353,16 +436,6 @@ const styles = StyleSheet.create({
     bottom: 75,
     right: 40,
   },
-  taskContainer: {
-    position: "absolute",
-    top: 125,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height / 2.5,
-  },
   btnProfile: {
     position: "absolute",
     paddingTop: Constants.statusBarHeight,
@@ -373,15 +446,23 @@ const styles = StyleSheet.create({
     paddingTop: Constants.statusBarHeight,
     right: 10,
   },
+  profileContainer: {
+    position: "absolute",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingTop: Constants.statusBarHeight + 50,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  spinnerContinare: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  spinnerHorizontal: {
+    flexDirection: "row",
+    justifyContent: "center",
+    padding: 10,
+  },
 });
-
-{
-  /* <CheckBox
-          containerStyle={{ backgroundColor: "#494D5F" }}
-          textStyle={{ color: "white" }}
-          title="Tarea tres"
-          checked={check1}
-          onPress={() => setCheck1(!check1)}
-        />
-        <Divider /> */
-}
